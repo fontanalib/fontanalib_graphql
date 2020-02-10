@@ -127,48 +127,7 @@ class QueryNodes extends DataProducerPluginBase implements ContainerFactoryPlugi
     $query = $storage->getQuery()
       ->currentRevision()
       ->accessCheck();
-    // if($filter){
-    //   $and = $query->andConditionGroup();
-    //   foreach($filter as $f){
-    //     switch($f['field']){
-    //       case 'nodeType':
-    //       case 'type': 
-    //         if(is_array($f['value'])){
-    //           $nodeTypes = array_intersect($bundles, $f['value']);
-    //           $query->condition($type->getKey('bundle'), $nodeTypes, static::ENUM_MAP[$f['operator']]);
-    //         }elseif(in_array($f['value'], $bundles)){
-    //           $query->condition($type->getKey('bundle'), $f['value'], static::ENUM_MAP[$f['operator']]);
-    //         }else {
-    //           throw new UserError(sprintf('NodeType specified not configured for GraphQL: %s.', print_r($f['value'], TRUE)));
-    //         } break;
-    //       default: $and->condition($f['field'], $f['value'], static::ENUM_MAP[$f['operator']]);
-    //     }
-    //   }
-    //   $query->condition($and);
-    //   // if(isset($filter['nodeType']) && !empty($filter['nodeType'])){
-    //   //   if(is_array($filter['nodeType'])){
-    //   //     $nodeTypes = array_intersect($bundles, $filter['nodeType']);
-    //   //     $query->condition($type->getKey('bundle'), $nodeTypes, "IN");
-    //   //   } elseif(in_array($filter['nodeType'], $bundles)){
-    //   //     $query->condition($type->getKey('bundle'), $filter['nodeType']);
-    //   //   } else {
-    //   //     throw new UserError(sprintf('NodeType specified not configured for GraphQL: %s.', print_r($filter['nodeType'], TRUE)));
-    //   //   }
-    //   //   unset($filter['nodeType']);
-    //   // } else {
-    //   //   $query->condition($type->getKey('bundle'), $bundles, "IN");
-    //   // }
-    // }
-    
-    // if(count($filter)){
-    //   $and = $query->andConditionGroup();
-    //   foreach($filter as $field => $val){
-    //     switch($field){
-    //       case 'createdBy': $and->condition('uid', $val); break;
-    //     }
-    //   }
-    // }
-    
+
     $query->range($offset, $limit);
     if (!empty($filter) && is_array($filter)) {
       $filterConditions = $this->buildFilterConditions($query, $filter);
@@ -193,6 +152,20 @@ class QueryNodes extends DataProducerPluginBase implements ContainerFactoryPlugi
 
     return new QueryConnection($query);
   }
+  /**
+   * Recursively builds the filter condition groups.
+   *
+   * @param \Drupal\fontanalib_graphql\Wrappers\QueryConnection $query
+   *   The entity query object.
+   * @param array $filter
+   *   The filter definitions from the field arguments.
+   *
+   * @return \Drupal\Core\Entity\Query\ConditionInterface
+   *   The generated condition group according to the given filter definitions.
+   *
+   * @throws \GraphQL\Error\UserError
+   *   If the given operator and value for a filter are invalid.
+   */
   public function buildFilterConditions($query, $filter){
     $conjunction = !empty($filter['conjunction']) ? $filter['conjunction'] : 'AND';
     $group = $conjunction === 'AND' ? $query->andConditionGroup() : $query->orConditionGroup();
