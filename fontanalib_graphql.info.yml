@@ -1,0 +1,8 @@
+name: Fontanalib GraphQL
+type: module
+description: 'Schema for the GraphQL module.'
+package: 'fontanalib'
+core: 8.x
+dependencies:
+  - graphql:graphql
+  - node:node

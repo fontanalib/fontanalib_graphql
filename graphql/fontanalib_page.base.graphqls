@@ -1,0 +1,7 @@
+type Page implements Node {
+  id: Int!
+  title: String!
+  alias: String!
+  body: String
+  summary: String
+}

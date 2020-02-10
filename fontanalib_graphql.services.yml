@@ -1,0 +1,10 @@
+parameters:
+  graphql.config:
+    development: true
+services:
+  cache.fontanalib_graphql:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory: cache_factory:get
+    arguments: [fontanalib_graphql]

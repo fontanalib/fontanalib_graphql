@@ -1,0 +1,104 @@
+schema {
+  query: Query
+}
+
+enum SortOrder {
+  DESC
+  ASC
+}
+enum Conjunction {
+  AND
+  OR
+}
+enum Operator {
+  EQUAL
+  NOT_EQUAL
+  LESS_THAN
+  LESS_THAN_OR_EQUAL
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL
+  NOT_IN
+  IN
+  BETWEEN
+  NOT_BETWEEN
+  IS_NULL
+  IS_NOT_NULL
+  EXISTS
+  NOT_EXISTS
+  LIKE
+  NOT_LIKE
+}
+
+scalar ArrayOrSingle
+
+input FilterConditionInput {
+  field: String!
+  value: ArrayOrSingle
+  operator: Operator
+  enabled: Boolean = true
+}
+input FilterInput {
+  conditions: [FilterConditionInput]
+  groups: [FilterInput],
+  conjunction: Conjunction = AND
+}
+
+input SortNode {
+  sortBy: String!
+  order: SortOrder! = ASC
+}
+
+type Query {
+  article(id: Int!): Article
+  nodes(
+    offset: Int = 0
+    limit: Int = 10
+    filter: FilterInput
+    sort: SortNode
+  ): NodeConnection!
+  terms(vid: String): TermConnection!
+  term(
+    id: Int
+    ): Term
+}
+
+
+scalar Image
+scalar Images
+
+type Term {
+  id: Int!
+  name: String!
+  vid: String!
+}
+
+type User {
+  name: String
+  mail: String
+  picture(size: String = "thumbnail"): Image
+}
+
+interface Node {
+  id: Int!
+  title: String!
+  alias: String!
+}
+
+type Article implements Node {
+  id: Int!
+  title: String!
+  alias: String!
+  author: User
+  featured_image(size: [String] = ["thumbnail","medium"]): Images
+  body: String
+}
+
+
+type NodeConnection {
+  total: Int!
+  items: [Node]
+}
+type TermConnection {
+  total: Int!
+  items: [Term]
+}
