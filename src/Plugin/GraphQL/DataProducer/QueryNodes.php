@@ -19,6 +19,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *     label = @Translation("Node connection")
  *   ),
  *   consumes = {
+ *     "entityType" = @ContextDefinition("string",
+ *       label = @Translation("entityType"),
+ *       required = TRUE
+ *     ),
  *     "offset" = @ContextDefinition("integer",
  *       label = @Translation("Offset"),
  *       required = FALSE
@@ -108,21 +112,24 @@ class QueryNodes extends DataProducerPluginBase implements ContainerFactoryPlugi
   }
 
   /**
+   * @param $entityType
    * @param $offset
    * @param $limit
-   * @param $nodeType
+   * @param $filter
+   * @param $sort
    * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $metadata
    *
    * @return \Drupal\fontanalib_graphql\Wrappers\QueryConnection
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function resolve($offset, $limit, $filter, $sort, RefinableCacheableDependencyInterface $metadata) {
+  public function resolve($entityType, $offset, $limit, $filter, $sort, RefinableCacheableDependencyInterface $metadata) {
     if (!$limit > static::MAX_LIMIT) {
       throw new UserError(sprintf('Exceeded maximum query limit: %s.', static::MAX_LIMIT));
     }
-    $bundles = array_keys(\Drupal::config('fontanalib_graphql.settings')->get('bundles'));
-    $storage = $this->entityManager->getStorage('node');
+    $bundles = array_keys(\Drupal::cache('fontanalib_graphql')->get('bundles')->data);
+  
+    $storage = $this->entityManager->getStorage($entityType);
     $type = $storage->getEntityType();
     $query = $storage->getQuery()
       ->currentRevision()
@@ -135,15 +142,28 @@ class QueryNodes extends DataProducerPluginBase implements ContainerFactoryPlugi
         $query->condition($filterConditions);
       }
     }
+    $query->condition('status', 1);
+    if($entityType == 'node'){
+      $query->condition('type', $bundles, "IN");
+    }
+    $query->condition('status', 1);
+    // if($storage->hasField('field_private')){
+      $public = $query->orConditionGroup()
+                ->notExists('field_private')
+                ->condition('field_private', 1, "<>");
+    //   $query->condition('field_private', 1, "<>");
+    // }
+    $query->condition($public);
+  
     if($sort && !empty($sort)){
       $query->sort($sort['sortBy'], $sort['order']);
-    } else {
+    } elseif($entityType == 'node') {
       $query->sort('created', 'DESC');
     }
     $metadata->addCacheTags($type->getListCacheTags()); 
     $metadata->addCacheContexts($type->getListCacheContexts());
     $query->addMetaData('graphql_context',[
-      'parent'=>'node',
+      'parent'=> $entityType,
       'offset'=> $offset,
       'limit'=>$limit,
       'filter'=>serialize($filter),

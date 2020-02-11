@@ -49,19 +49,23 @@ input SortNode {
 }
 
 type Query {
-  article(id: Int!): Article
   nodes(
     offset: Int = 0
     limit: Int = 10
     filter: FilterInput
     sort: SortNode
   ): NodeConnection!
-  terms(vid: String): TermConnection!
+  terms(
+    offset: Int = 0
+    limit: Int = 10
+    filter: FilterInput
+    sort: SortNode
+  ): TermConnection!
   term(
     id: Int
     ): Term
+  route(path: String!): Node
 }
-
 
 scalar Image
 scalar Images
@@ -83,16 +87,6 @@ interface Node {
   title: String!
   alias: String!
 }
-
-type Article implements Node {
-  id: Int!
-  title: String!
-  alias: String!
-  author: User
-  featured_image(size: [String] = ["thumbnail","medium"]): Images
-  body: String
-}
-
 
 type NodeConnection {
   total: Int!

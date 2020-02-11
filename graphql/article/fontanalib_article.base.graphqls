@@ -1,0 +1,9 @@
+type Article implements Node {
+  id: Int!
+  title: String!
+  alias: String!
+  author: User
+  featured_image(size: [String] = ["thumbnail","medium"]): Images
+  body: String
+  tags: [Term]
+}

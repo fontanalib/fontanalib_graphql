@@ -8,13 +8,13 @@ use Drupal\graphql\Plugin\GraphQL\SchemaExtension\SdlSchemaExtensionPluginBase;
 
 /**
  * @SchemaExtension(
- *   id = "fontanalib_page",
- *   name = "Page extension",
- *   description = "A simple extension that adds node related fields for pages.",
+ *   id = "fontanalib_article",
+ *   name = "Article extension",
+ *   description = "A simple extension that adds node related fields for articles.",
  *   schema = "fontanalib"
  * )
  */
-class PageSchema extends SdlSchemaExtensionPluginBase {
+class ArticleSchema extends SdlSchemaExtensionPluginBase {
   /**
    * {@inheritdoc}
    */
@@ -22,28 +22,46 @@ class PageSchema extends SdlSchemaExtensionPluginBase {
     $builder = new ResolverBuilder();
 
     $this->addQueryFields($registry, $builder);
-    $this->addPageFields($registry, $builder);
+    $this->addArticleFields($registry, $builder);
   }
 
   /**
    * @param \Drupal\graphql\GraphQL\ResolverRegistryInterface $registry
    * @param \Drupal\graphql\GraphQL\ResolverBuilder $builder
    */
-  protected function addPageFields(ResolverRegistryInterface $registry, ResolverBuilder $builder) {
-    $registry->addFieldResolver('Page', 'id',
+  protected function addArticleFields(ResolverRegistryInterface $registry, ResolverBuilder $builder) {
+    $registry->addFieldResolver('Article', 'id',
       $builder->produce('entity_id')
         ->map('entity', $builder->fromParent())
     );
 
-    $registry->addFieldResolver('Page', 'title',
+    $registry->addFieldResolver('Article', 'title',
       $builder->produce('entity_label')
         ->map('entity', $builder->fromParent())
     );
-    $registry->addFieldResolver('Page', 'alias',
+
+    $registry->addFieldResolver('Article', 'alias',
       $builder->produce('entity_alias')
         ->map('entity', $builder->fromParent())
     );
-    $registry->addFieldResolver('Page', 'body',
+    
+    $registry->addFieldResolver('Article', 'author',
+      $builder->produce('entity_owner')
+        ->map('entity', $builder->fromParent())
+    );
+
+    $registry->addFieldResolver('Article', 'featured_image',
+      $builder->compose(
+        $builder->produce('property_path')
+        ->map('type', $builder->fromValue("entity:file"))
+        ->map('value', $builder->fromParent())
+        ->map('path', $builder->fromValue("field_image.entity")),
+        $builder->produce('image_derivatives')
+        ->map('entity', $builder->fromParent())
+        ->map('styles', $builder->fromArgument('size')) 
+      )
+    );
+    $registry->addFieldResolver('Article', 'body',
       $builder->compose(
         $builder->produce('property_path')
         ->map('type', $builder->fromValue("entity:node"))
@@ -53,6 +71,11 @@ class PageSchema extends SdlSchemaExtensionPluginBase {
         ->map('string', $builder->fromParent()) 
       )
   );
+  $registry->addFieldResolver('Article', 'tags',
+      $builder->produce('entity_reference')
+        ->map('entity', $builder->fromParent())
+        ->map('field', $builder->fromValue('field_tags'))
+    );
   }
 
   /**
@@ -60,10 +83,10 @@ class PageSchema extends SdlSchemaExtensionPluginBase {
    * @param \Drupal\graphql\GraphQL\ResolverBuilder $builder
    */
   protected function addQueryFields(ResolverRegistryInterface $registry, ResolverBuilder $builder) {
-    $registry->addFieldResolver('Query', 'page',
+    $registry->addFieldResolver('Query', 'article',
       $builder->produce('entity_load')
         ->map('type', $builder->fromValue('node'))
-        ->map('bundles', $builder->fromValue(['page']))
+        ->map('bundles', $builder->fromValue(['article']))
         ->map('id', $builder->fromArgument('id'))
     );
   }
@@ -80,9 +103,8 @@ class PageSchema extends SdlSchemaExtensionPluginBase {
    */
   protected function loadDefinitionFile($type) {
     //$definition = $this->getPluginDefinition();
-    // $module = $this->moduleHandler->getModule($this->getPluginDefinition()['provider']);
-    $path = drupal_get_path('module', 'fontanalib_graphql');
-    $file = "{$path}/graphql/page/fontanalib_page.{$type}.graphqls";
+    $module = $this->moduleHandler->getModule($this->getPluginDefinition()['provider']);
+    $file = "{$module->getPath()}/graphql/article/fontanalib_article.{$type}.graphqls";
 
     if (!file_exists($file)) {
       throw new InvalidPluginDefinitionException(sprintf("Missing schema definition file at %s.", $file));
