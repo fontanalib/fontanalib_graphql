@@ -147,13 +147,13 @@ class QueryNodes extends DataProducerPluginBase implements ContainerFactoryPlugi
       $query->condition('type', $bundles, "IN");
     }
     $query->condition('status', 1);
-    // if($storage->hasField('field_private')){
+    if($entityType == 'taxonomy_term'){
       $public = $query->orConditionGroup()
                 ->notExists('field_private')
                 ->condition('field_private', 1, "<>");
-    //   $query->condition('field_private', 1, "<>");
-    // }
-    $query->condition($public);
+      $query->condition($public);
+    }
+    
   
     if($sort && !empty($sort)){
       $query->sort($sort['sortBy'], $sort['order']);
